@@ -1,0 +1,55 @@
+{
+    "port": 5400,
+    "db": {
+        "host": "mongodb://localhost",
+        "port": 27017,
+        "user": "root",
+        "password": "password",
+        "database": "event_log_db",
+        "connectionLimit": 10,
+        "waitForConnections": true,
+        "dateStrings": true,
+        "multipleStatements": true
+    },
+    "mailFrom": "My-Night-Out",
+    "mailCredential": {
+        "service": "gmail",
+        "auth": {
+            "user": "mynightout.dev",
+            "pass": "hrhk@1234"
+        },
+        "tls": {
+            "rejectUnauthorized": false
+        }
+    },
+    "aws": {
+        "key": {
+            "accessKeyId": "AKIAIOB6ZVYGZZAZAO3A",
+            "secretAccessKey": "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"
+        }
+    },
+    "push": {
+        "apn": {
+            "production": false,
+            "cert_path": "assets/certificates/mno_30May_cert.pem",
+            "key_path": "assets/certificates/mno_30May_key.pem"
+        },
+        "gcm": {
+            "gcm_key": "AIzaSyBWk1IJKZxZp3tO5MNsugmBoRTkedeVjfY"
+        }
+    },
+    "socketIp": {
+        "keyBoardEvent": {
+            "ip": "localhost",
+            "port": "4003"
+        },
+        "mouseEvent": {
+            "ip": "localhost",
+            "port": "4002"
+        },
+        "allEvent": {
+            "ip": "localhost",
+            "port": "4001"
+        }
+    }
+}
