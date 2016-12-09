@@ -1,66 +1,82 @@
+var db = require('../libs/mysql_db');
+var ApiException = require('../libs/core/ApiException');
+
+var mysql = require('mysql');
+
 // define module
+
 var dbHelper = {};
 module.exports = dbHelper;
 
-//functions for CRUD operations
+/**
+ * Execute mysql query
+ * @param {query} - sqlQuery
+ * @param {function(Error,object)} callback - callback function.
+ */
 
-// Get the documents collection
-// this function take three arguments
-// 1: query : condition
-// 2: model : collection(table)
-// 3: and a callback
-dbHelper.select = function(query,model,callback) {
-    model.find(query,function(err,result) {
-        callback(err,result);
-    });
-};
-
-// insert row
-// model :table name in which you want to save
-dbHelper.insert = function (model,done) {
-    model.save(function (err) {
-        if(err)
-            done(err);
-        else{
-            done(null);
+dbHelper.executeQuery = function (sqlQuery, callback) {
+    db.getConnection(function (err, connection) {
+        if (err) {
+            return callback(ApiException.newInternalError(err));
+        }
+        else {
+            connection.query(sqlQuery, function (err, result) {
+                connection.release();
+                if (err) {
+                    return callback(ApiException.newInternalError(err));
+                }
+                else {
+                    return callback(err, result);
+                }
+            });
         }
     });
 };
 
-dbHelper.update = function(query,model,data,callback) {
-    model.findOneAndUpdate(query, {$set:data},{ 'new': true }, function(err, doc){
-        if (err) return callback(err,doc);
-        return callback(null,doc);
+
+/**
+ * Execute mysql query
+ * @param {query} - sqlQuery
+ * returns promise
+ */
+
+
+dbHelper.executeQueryPromise = function (sqlQuery) {
+    return new Promise(function (resolve, reject) {
+        db.getConnection(function (err, connection) {
+            if (err) {
+                reject(ApiException.newInternalError(err));
+            }
+            connection.query(sqlQuery, function (err, result) {
+                connection.release();
+                if (err) {
+                    reject(ApiException.newInternalError(err));
+                }
+                else {
+                    resolve(result);
+                }
+            });
+        });
     });
 };
 
-dbHelper.delete = function (query,model,callback) {
-    model.findOneAndRemove(query, function(err, doc){
-        if (err) return callback(err,doc);
-        return callback(null,doc);
-    });
-};
 
-dbHelper.deepSave = function (conditions,model,update,callback) {
-    model.findOneAndUpdate(conditions, update,{ 'new': true }, function(err, doc) {
-        if (err) return callback(err,doc);
-        return callback(null,doc);
-    });
-};
+/**
+ * Change table flags according to updateObject
+ * @param {object} - updateObject
+ * @param {function(Error,object)} callback - callback function.
+ */
 
-dbHelper.deepDelete = function (postId,model,update,callback) {
-    model.findByIdAndUpdate(postId, update,{ 'new': true }, function(err, doc) {
-        if (err) return callback(err,doc);
-        return callback(null,doc);
-    });
-};
+dbHelper.changeTableFlag = function (updateObject, callback) {
+    var stringQuery = 'UPDATE ?? SET ??=? WHERE ??=? AND ??=?';
+    var queryObject = [updateObject.tableName, updateObject.fieldName,
+        updateObject.value, 'id', updateObject.id, 'isDeleted', false];
+    stringQuery = mysql.format(stringQuery, queryObject);
 
-
-
-//Sorting
-dbHelper.sort = function (model, findCondition, sortCondition,callback) {
-    model.find(findCondition).sort(sortCondition).exec(function (err, cursor) {
-        if (err) return callback(err, cursor);
-        return callback(null, cursor);
+    dbHelper.executeQuery(stringQuery, function (err, result) {
+        if (err) {
+            return callback(err);
+        }
+        return callback(null, result.affectedRows);
     });
 };

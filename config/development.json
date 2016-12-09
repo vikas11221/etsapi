@@ -1,15 +1,14 @@
 {
-    "port": 5400,
+    "port": 4100,
     "db": {
-        "host": "mongodb://localhost",
-        "port": 27017,
+        "host": "localhost",
+        "port": 3306,
         "user": "root",
-        "password": "password",
-        "database": "event_log_db",
-        "connectionLimit": 10,
+        "password": "hrhk",
+        "database": "ETS",
+        "connectionLimit": 40,
         "waitForConnections": true,
-        "dateStrings": true,
-        "multipleStatements": true
+        "dateStrings": true
     },
     "mailFrom": "My-Night-Out",
     "mailCredential": {

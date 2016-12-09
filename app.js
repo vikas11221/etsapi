@@ -9,7 +9,7 @@ var config = require('config');
 var logger = require('./libs/logger');
 var ErrorHandler = require('./libs/core/ErrorHandler');
 var ApiException = require('./libs/core/ApiException');
-//var jsonBodyParser = require('./libs/jsonBodyParser');
+var jsonBodyParser = require('./libs/jsonBodyParser');
 
 
 // init environment
@@ -24,12 +24,13 @@ if (lodash.includes(allowedEnv, env)) {
 
 
 var app = express();
-var db = require("./libs/mongo_db");
+var db = require('./libs/mysql_db');
+db.connect();
 
 // user json body parser
-// app.use(jsonBodyParser({
-//     limit: '50000kb'
-// }));
+app.use(jsonBodyParser({
+    limit: '50000kb'
+}));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true, parameterLimit: 50000 }));
 
 //enable cors
@@ -65,9 +66,6 @@ app.use(errorHandler.build());
 app.on('online', function () {
     console.info('App is listening on port ', config.get('port'));
 });
-
-// Connect to Mongo on start
-db.connect();
 
 module.exports = app;
 
