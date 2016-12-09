@@ -558,16 +558,14 @@ var sanitizeDataForUserTable = function (data) {
  */
 var checkDuplicateRegistratrtion = function (emailId, userName, callback) {
     var sql = 'CALL ?? ( ?,?);';
-    var object = [dbNames.sp.checkDuplicateRegistration, emailId, userName];
+    var object = [dbNames.sp.checkDuplicateRegistration, '', userName];
     sql = mysql.format(sql, object);
     dbHelper.executeQuery(sql, function (err, result) {
         if (err) {
             return callback(err);
         }
         if(result[0].length > 0){
-            if (result[0][0].count > 0) {
-                return callback(null, true);
-            }
+           return callback(null, true);
         }
         return callback(null, false);
     });

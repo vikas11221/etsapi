@@ -89,7 +89,7 @@ auth.login = function (req, callback) {
     var rules = {
         email: Check.that(req.body.email).isNotEmptyOrBlank().isLengthInRange(1, 100),
         password: Check.that(req.body.password).isNotEmptyOrBlank().isLengthInRange(4, 20),
-        domainId: Check.that(req.body.domainId).isInteger()
+        // domainId: Check.that(req.body.domainId).isInteger()
     };
     var userDetail = {};
     var newSessionId = '';
@@ -219,7 +219,7 @@ var checkUserNameExistance = function (userName, callback) {
  */
 var validateUser = function (request, callback) {
     var sql = 'CALL ?? ( ?,?);';
-    var object = [dbNames.sp.userLogin, request.email, request.domainId];
+    var object = [dbNames.sp.getUserDetail, '' , request.email];
     sql = mysql.format(sql, object);
     dbHelper.executeQueryPromise(sql).then(function (result) {
         if (result[0].length) {
@@ -249,7 +249,7 @@ var updateUserDetailOnLogin = function (req, newSessionId, callback) {
     }
     updateObject['sessionId'] = newSessionId;
     var stringQuery = 'UPDATE ?? SET ? WHERE email = ? OR userName=? ';
-    stringQuery = mysql.format(stringQuery, ['db_users', updateObject, req.body.email, req.body.email]);
+    stringQuery = mysql.format(stringQuery, ['users', updateObject, req.body.email, req.body.email]);
     dbHelper.executeQueryPromise(stringQuery).then(function (result) {
         callback(null, result);
     }, function (err) {

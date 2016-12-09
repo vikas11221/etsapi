@@ -4,5 +4,6 @@ module.exports = {
     },
     sp: {
         checkDuplicateRegistration: 'checkDuplicateRegistration',
+        getUserDetail : 'checkDuplicateRegistration',
     }
 };

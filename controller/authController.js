@@ -12,8 +12,6 @@ var userModel = require('../models/userModel');
  */
 
 exports.signUp = function (req, res, next) {
-
-    debugger
     userModel.createPublicUser(req, function (err, result, sessionId) {
         if (err) {
             next(err);
