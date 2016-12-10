@@ -18,3 +18,14 @@ exports.savetimings = function (req, res, next) {
         }
     });
 };
+
+exports.getTotalBreakTime = function (req, res, next) {
+    timingsModel.getTotalBreakTime(req, function (err, result) {
+        if (err) {
+            next(err);
+        }
+        else {
+            res.set('sessionId', req.get('sessionId')).json(result);
+        }
+    });
+};

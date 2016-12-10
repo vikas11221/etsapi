@@ -364,6 +364,7 @@ var sanitizeDataForUserTable = function (data) {
     insertObject['userName'] = data.userName ? data.userName.trim() : data.email.trim();
     insertObject['sessionId'] = uuid.v4();
     insertObject['isLive'] = true;
+    insertObject['date'] = require('moment')().format('YYYY-MM-DD HH:mm:ss');
     return insertObject;
 };
 

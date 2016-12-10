@@ -5,6 +5,7 @@ module.exports = {
     sp: {
         checkDuplicateRegistration: 'checkDuplicateRegistration',
         getUserDetail : 'checkDuplicateRegistration',
-        userCheckToken : 'userCheckToken'
+        userCheckToken : 'userCheckToken',
+        totalIdleTime_meetingTime: 'totalIdleTime_meetingTime'
     }
 };

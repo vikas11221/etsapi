@@ -249,6 +249,7 @@ var updateUserDetailOnLogin = function (req, newSessionId, callback) {
         updateObject['deviceId'] = req.body.deviceId;
     }
     updateObject['sessionId'] = newSessionId;
+    updateObject['date'] = require('moment')().format('YYYY-MM-DD HH:mm:ss');
     var stringQuery = 'UPDATE ?? SET ? WHERE email = ? OR userName=? ';
     stringQuery = mysql.format(stringQuery, ['users', updateObject, req.body.email, req.body.email]);
     dbHelper.executeQueryPromise(stringQuery).then(function (result) {

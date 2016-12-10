@@ -8,6 +8,7 @@ var responseMessage = require('../assets/responseMessage');
 var awsHelper = require('../helper/awsUploadHelper');
 var dbNames = require('../assets/dbNames');
 var api_events = require('../assets/api_events');
+var moment = require('moment');
 // var mailer = require('../notify/mailNotifier');
 
 var md5 = require('md5');
@@ -38,7 +39,8 @@ user.saveBreakTime = function (req, callback) {
         meetingWith : Check.that(req.body.meetingWith).isOptional().isNotEmptyOrBlank().isLengthInRange(1, 50),
         reason : Check.that(req.body.reason).isNotEmptyOrBlank(),
         breakTime : Check.that(req.body.breakTime).isNotEmptyOrBlank(),
-        isMeeting : Check.that(req.body.isMeeting).isNotEmptyOrBlank()
+        isMeeting : Check.that(req.body.isMeeting).isNotEmptyOrBlank(),
+        date : Check.that(req.body.date).isNotEmptyOrBlank()
     };
     appUtils.validateChecks(rules, function (err) {
         if (err) {
@@ -46,7 +48,7 @@ user.saveBreakTime = function (req, callback) {
         }
         else {
             var insertData = sanitizeDataForTimingsTable(req.body);
-            insertTimingsData(insertData, function (err, userIdCreated) {
+            insertTimingsData(insertData, function (err, result) {
                 if (err) {
                     return callback(err);
                 }
@@ -61,7 +63,61 @@ user.saveBreakTime = function (req, callback) {
     });
 };
 
-var responseForSuccessfullSave = function (userDetail, userId, roleId) {
+user.getTotalBreakTime = function (req, callback) {
+
+    var curDate = moment().format().split("T")[0];
+
+    var stringQuery = 'CALL ?? ( ?,?);';
+    var object = [dbNames.sp.totalIdleTime_meetingTime, curDate , req.body.userId];
+    stringQuery = mysql.format(stringQuery, object);
+
+    dbHelper.executeQuery(stringQuery, function (err, result) {
+        if (err) {
+            return callback(err);
+        }
+
+        if (result[0].length) {
+            getLoginTime(req.body.userId, function (err,result_date) {
+
+                var loginTime = result_date[0].date;
+
+                var myStringParts = (result[0])[0].totalIdleTime.split(':');
+                var actualTime = moment(moment().format('YYYY-MM-DD hh:mm:ss')).subtract({ hours: myStringParts[0], minutes: myStringParts[1], seconds: myStringParts[2]});
+                var _loginTime = new moment(moment( loginTime ).format('YYYY-MM-DD hh:mm:ss'));     
+              
+                var ms = moment(actualTime).diff(_loginTime);
+                var d = moment.duration(ms);
+                var totalWorkHours = Math.floor(d.asHours()) + moment.utc(ms).format(":mm:ss");
+                
+                var startTime=moment(totalWorkHours, "HH:mm:ss");
+                var endTime=moment('08:30:00',"hh:mm:ss");
+                var duration = moment.duration(endTime.diff(startTime));
+                var hours = parseInt(duration.asHours());
+                var minutes = parseInt(duration.asMinutes())-hours*60;
+
+                var response = new responseModel.arrayResponse();
+                response.data = lodash.concat(result[0] , {'totalWorkHours':totalWorkHours});
+                response.data = lodash.concat(response.data , {'remainingHours':hours + ":" + minutes});
+                return callback(null, response);
+            });
+        }
+
+    });
+};
+
+var getLoginTime = function (userId, callback) {
+    var stringQuery = 'SELECT date FROM users where id = ? ';
+    stringQuery = mysql.format(stringQuery, userId);
+    dbHelper.executeQuery(stringQuery, function (err, result) {
+        if (err) {
+            return callback(err);
+        }
+        return callback(err, result);
+
+    });
+};
+
+var responseForSuccessfullSave = function () {
     var response = {};
     return response;
 };
@@ -87,6 +143,8 @@ var sanitizeDataForTimingsTable = function (data) {
     if (data.meetingWith) {
         insertObject['meetingWith'] = data.meetingWith.trim();
     }
-    insertObject['isMeeting'] = data.isMeeting;
+    insertObject['isApproved'] = false;
+    insertObject['isMeeting'] = data.isMeeting == "true";
+    insertObject['date'] = data.date;
     return insertObject;
 };
