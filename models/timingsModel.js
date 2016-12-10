@@ -117,6 +117,38 @@ var getLoginTime = function (userId, callback) {
     });
 };
 
+user.changeIsApproved = function (req, callback) {
+    var stringQuery = 'UPDATE timer_detail SET isApproved = ? where id = ? ';
+    stringQuery = mysql.format(stringQuery, [req.body.isApproved == "true",req.body.breakTimeId]);
+    dbHelper.executeQuery(stringQuery, function (err, result) {
+        if (err) {
+            return callback(err);
+        }
+        return callback(err, result);
+
+    });
+};
+
+user.breaktimelist = function (req, callback) {
+    var stringQuery = 'SELECT * FROM timer_detail ORDER BY date DESC';
+    // stringQuery = mysql.format(stringQuery, [req.body.isApproved == "true",req.body.breakTimeId]);
+    dbHelper.executeQuery(stringQuery, function (err, result) {
+        if (err) {
+            return callback(err);
+        }
+        
+        if(result[0].length > 0){
+        
+        var response = new responseModel.arrayResponse();
+                response.data = result[0];
+                return callback(null, response);
+        }
+        
+        return callback(err, result);
+
+    });
+};
+
 var responseForSuccessfullSave = function () {
     var response = {};
     return response;

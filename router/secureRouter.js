@@ -9,4 +9,7 @@ router.post('/user/savetime', controllerIndex.timings.savetimings);
 //get total meeting time and total idle time
 router.post('/user/totalbreaktime_idletime', controllerIndex.timings.getTotalBreakTime);
 
+router.post('/user/changeIsApproved', controllerIndex.timings.changeIsApproved);
+router.post('/user/breaktimelist', controllerIndex.timings.breaktimelist);
+
 module.exports = router;
