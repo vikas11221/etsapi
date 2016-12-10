@@ -48,7 +48,7 @@ user.createPublicUser = function (req, callback) {
             var insertData = sanitizeDataForUserTable(req.body);
             var sessionId = insertData.sessionId;
             //         return callback(null, insertData);
-            insertUserData(insertData, _user_role.public, function (err, userIdCreated) {
+            insertUserData(insertData, {roleId:_user_role.public, departmentId: req.body.departmentId.trim()}, function (err, userIdCreated) {
                 if (err) {
                     return callback(err);
                 }
@@ -61,8 +61,6 @@ user.createPublicUser = function (req, callback) {
          }
     });
 };
-
-
 
 /**
  * Used for creating new business Owner.
@@ -206,61 +204,6 @@ user.uploadProfilePic = function (req, callback) {
     });
 };
 
-/**
- * Use for checking a user is artist profile
- * @param {object} - req (express request object)
- * @param {function(Error,object)} callback - callback function.
- */
-user.isArtist = function (req, callback) {
-    var userId = req.auth.id;
-    var stringQuery = 'CALL ??(?)';
-    stringQuery = mysql.format(stringQuery, [dbNames.sp.checkArtist, userId]);
-    dbHelper.executeQuery(stringQuery, function (err, result) {
-        if (err) {
-            return callback(err);
-        }
-        var resopnse = new responseModel.objectResponse();
-        resopnse.data['isArtist'] = false;
-        if (result[0][0].status == 1) {
-            resopnse.data['isArtist'] = true;
-        }
-        return callback(err, resopnse);
-    });
-};
-
-
-/**
- * Use for blocking user from login
- * @param {object} - req (express request object)
- * @param {function(Error,object)} callback - callback function.
- */
-user.blockUser = function (req, callback) {
-    var rules = {
-        userId: Check.that(req.body.userId).isMYSQLId(),
-        flag: Check.that(req.body.flag).isBooleanType()
-    };
-    appUtils.validateChecks(rules, function (err) {
-        if (err) {
-            return callback(err);
-        }
-        var SQL = 'CALL ?? (?,?)';
-        var inserts = [dbNames.sp.blockUser, req.body.userId, req.body.flag];
-        SQL = mysql.format(SQL, inserts);
-        dbHelper.executeQuery(SQL, function (err, result) {
-            if (err) {
-                return callback(err);
-            }
-            if (result.affectedRows == 1) {
-                var resopnse = new responseModel.objectResponse();
-                resopnse.message = req.body.flag ? responseMessage.USER_BLOCKED : responseMessage.USER_UNBLOCKED;
-                return callback(err, resopnse);
-            }
-            return callback(ApiException.newNotFoundError(null).addDetails(responseMessage.USER_NOT_FOUND));
-        });
-    });
-};
-
-
 
 /**
  * Used for creating new junior admin.
@@ -297,53 +240,6 @@ user.createJuniorAdmin = function (req, callback) {
 
 };
 
-
-/**
- * Used for creating new junior admin.
- * @param {object} - req (express request object)
- * @param {function(Error,object)} callback - callback function.
- */
-user.createSalesPerson = function (req, callback) {
-    var rules = {
-        domainId: Check.that(req.body.domainId).isInteger(),
-        privilage: Check.that(req.body.privilage).isInteger().isNumberInRange(1, 3),
-        firstName: Check.that(req.body.firstName).isNotEmptyOrBlank().isLengthInRange(1, 50),
-        lastName: Check.that(req.body.lastName).isNotEmptyOrBlank().isLengthInRange(1, 50),
-        email: Check.that(req.body.email).isNotEmptyOrBlank().isEmail().isLengthInRange(1, 100),
-        password: Check.that(req.body.password).isNotEmptyOrBlank().isLengthInRange(4, 20),
-        userName: Check.that(req.body.userName).isNotEmptyOrBlank().isLengthInRange(1, 100),
-        contactNo: Check.that(req.body.contactNo).isOptional().isNotEmptyOrBlank().isLengthInRange(10, 20)
-    };
-    async.waterfall([
-        function (cb) {
-            appUtils.validateChecks(rules, function (err) {
-                return cb(err);
-            });
-        },
-        function (cb) {
-            var insertData = sanitizeDataForUserTable(req.body);
-            insertUserData(insertData, _user_role.salesPerson, cb);
-        },
-        function (userId, cb) {
-            var salesPersonData = {
-                'userId': userId,
-                'domainId': req.body.domainId,
-                'privilege': req.body.privilage
-            };
-            var stringQuery = 'INSERT INTO db_sales_persons SET ? ';
-            stringQuery = mysql.format(stringQuery, salesPersonData);
-            dbHelper.executeQuery(stringQuery, cb);
-        }
-    ], function (err) {
-        if (err)
-            return callback(err);
-        var response = new responseModel.objectResponse();
-        response.message = responseMessage.REGISTRATION_SUCCESSFULL;
-        return callback(null, response);
-    });
-
-};
-
 /**
  * Used for creating new public user.
  * @param {object} - req (express request object)
@@ -353,7 +249,6 @@ user.createPublicUserViaAdmin = function (req, callback) {
     req.body['isInternalCall'] = true;
     user.createPublicUser(req, callback);
 };
-
 
 
 /**
@@ -367,85 +262,6 @@ user.failedSignUp = function (userId) {
         SQL = mysql.format(SQL, inserts);
         dbHelper.executeQuery(SQL, function () { });
     }
-};
-
-
-
-/**
- * Used for creating new public user.
- * @param {object} - req (express request object)
- * @param {function(Error,object)} callback - callback function.
- */
-user.linkUserWithBusiness = function (req, callback) {
-    var rules = {
-        domainId: Check.that(req.body.domainId).isInteger(),
-        businessId: Check.that(req.body.businessId).isInteger(),
-        userId: Check.that(req.body.userId).isInteger(),
-        businessTitle: Check.that(req.body.businessTitle).isNotEmptyOrBlank().isLengthInRange(1, 255)
-    };
-    var profileId = 0;
-    async.series([
-        function (cb) {
-            appUtils.validateChecks(rules, cb);
-        },
-        function (cb) {
-            checkClaimBusiness({ 'domainId': req.body.domainId, 'businessId': req.body.businessId }).then(function (result) {
-                return cb(null);
-            }, function (error) {
-                return cb(error);
-            });
-        },
-        function (cb) {
-            var SQLQuery = 'SELECT * FROM ?? WHERE ??=?';
-            var insertsObject = ['db_business_profiles', 'userId', req.body.userId];
-            SQLQuery = mysql.format(SQLQuery, insertsObject);
-            dbHelper.executeQuery(SQLQuery, function (err, result) {
-                if (err) {
-                    return cb(err);
-                }
-                result.forEach(function (object) {
-                    if (object.businessId) {
-                        if (object.isDeleted == 1) {
-                            profileId = object.id;
-                        }
-                    }
-                    else if (object.isDeleted == 0) {
-                        profileId = object.id;
-                    }
-                });
-                if (profileId == 0) {
-                    return cb(ApiException.newNotAllowedError(api_errors.feature_not_allowed.error_code, null)
-                        .addDetails(api_errors.feature_not_allowed.description));
-                }
-                return cb(null);
-            });
-        },
-        function (cb) {
-            var businessProfileData = {
-                'businessTitle': req.body.businessTitle,
-                'businessId': req.body.businessId,
-                'isDeleted': false
-            };
-            var SQLquery = 'UPDATE ?? SET ? WHERE ??=? AND ??=?';
-            var insertobjects = ['db_business_profiles', businessProfileData, 'id', profileId, 'domainId', req.body.domainId];
-            SQLquery = mysql.format(SQLquery, insertobjects);
-            dbHelper.executeQuery(SQLquery, cb);
-        }
-    ], function (err, result) {
-        if (err) {
-            return callback(err);
-        }
-        if (result[3].affectedRows == 1) {
-            var response = new responseModel.objectResponse();
-            response.message = responseMessage.LINKED_BUSINESS;
-            return callback(null, response);
-        }
-        else {
-            return callback(ApiException.newNotAllowedError(api_errors.feature_not_allowed.error_code, null)
-                .addDetails(api_errors.feature_not_allowed.description));
-        }
-
-    });
 };
 
 
@@ -482,11 +298,12 @@ user.checkBusinessUserProfile = function (req, callback) {
  * @param {function(Error,object)} callback - callback function.
  */
 
-var addUserRole = function (userId, roleId, callback) {
+var addUserRole = function (userId, roleId,departmentId, callback) {
     var stringQuery = 'INSERT INTO user_in_roles SET ?';
     var insertData = {
         'roleId': roleId,
-        'userId': userId
+        'userId': userId,
+        'departmentId':departmentId
     };
     stringQuery = mysql.format(stringQuery, insertData);
     dbHelper.executeQuery(stringQuery, callback);
@@ -500,7 +317,7 @@ var addUserRole = function (userId, roleId, callback) {
  * @param {function(Error,object)} callback - callback function.
  */
 
-var insertUserData = function (insertData, roleId, callback) {
+var insertUserData = function (insertData, roleId_dptId, callback) {
     checkDuplicateRegistratrtion(insertData.email, insertData.userName, function (err, status) {
         if (err) {
             return callback(err);
@@ -516,7 +333,7 @@ var insertUserData = function (insertData, roleId, callback) {
                 return callback(err);
             }
             var userId = result.insertId;
-            addUserRole(result.insertId, roleId, function (err) {
+            addUserRole(result.insertId, roleId_dptId.roleId,roleId_dptId.departmentId, function (err) {
                 if (err) {
                     return callback(err);
                 }
@@ -723,64 +540,3 @@ var validateBusinessOwnerObject = function (req, callback) {
     appUtils.validateChecks(rules, callback);
 };
 
-/**
- * User for check whether a business is avaiable for claim
- * @param {object} - req (express request object)
- */
-var checkClaimBusiness = function (request) {
-    return new Promise(function (resolve, reject) {
-        var SQL = 'CALL ?? (?,?)';
-        var inserts = [dbNames.sp.checkClaimBusiness, request.businessId, request.domainId];
-        SQL = mysql.format(SQL, inserts);
-        dbHelper.executeQuery(SQL, function (err, result) {
-            if (err) {
-                reject(err);
-            }
-
-            if (result[0][0].status == 1) {
-                resolve(true);
-            }
-            else {
-                reject(ApiException.newNotAllowedError(api_errors.feature_not_allowed.error_code, null)
-                    .addDetails(api_errors.feature_not_allowed.description));
-            }
-        });
-
-    });
-};
-
-/**
- * Use for changing other users password.
- * @param {object} - req (express request object)
- * @param userId(int)- used for changing other user password
- * @param newPassword(string)
- * @param {function(Error,object)} callback - callback function.
- */
-
-var changeOtherUserPassword = function (req, callback) {
-    var rules = {
-        newPassword: Check.that(req.body.newPassword).isNotEmptyOrBlank().isLengthInRange(4, 20),
-        userId: Check.that(req.body.userId).isInteger()
-    };
-    appUtils.validateChecks(rules, function (err) {
-        if (err) {
-            return callback(err);
-        }
-        var newPassword = md5(req.body.newPassword);
-        var sqlQuery = 'UPDATE ?? SET  ?? = ?  WHERE ??=? AND ??=?';
-        var inserts = ['db_users', 'password', newPassword, 'id', req.body.userId, 'isDeleted', false];
-        sqlQuery = mysql.format(sqlQuery, inserts);
-
-        dbHelper.executeQueryPromise(sqlQuery).then(function (result) {
-            if (result.affectedRows == 1) {
-                var response = new responseModel.objectResponse();
-                response.message = responseMessage.CHANGE_PASSWORD;
-                return callback(null, response);
-            }
-            return callback(ApiException.newNotAllowedError(api_errors.wrong_oldpassword.error_code, null)
-                .addDetails(api_errors.wrong_oldpassword.description));
-        }, function (error) {
-            return callback(error);
-        });
-    });
-};

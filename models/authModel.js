@@ -132,7 +132,6 @@ auth.login = function (req, callback) {
 };
 
 
-
 /**
  * For sending response if user successfully logged in.
  * @param {Object}  - userDetail(object).
@@ -176,6 +175,7 @@ var responseForSuccessfulLogin = function (userDetail) {
     return response;
 };
 
+
 /**
  * Check User Email exist in database or Not.
  * @param {Object} req - express request object.
@@ -211,6 +211,7 @@ var checkUserNameExistance = function (userName, callback) {
         return callback(null, result[0].count);
     });
 };
+
 
 /**
  * For authentication of user.
@@ -257,6 +258,7 @@ var updateUserDetailOnLogin = function (req, newSessionId, callback) {
     });
 
 };
+
 
 /**
  * Reset the password.

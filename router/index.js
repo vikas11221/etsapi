@@ -1,13 +1,9 @@
 var controllerIndex = require('../controller/index');
 var authUtil = require('../libs/authUtils');
+var secureRoute = require('./secureRouter');
 
 module.exports = function (app) {
-    app.get('/test', function (req, res, next) {
-        res.end("hey")
-    });
-    app.use('/secure', function () {
-        console.log("secure path");
-    });
+    app.use('/secure',secureRoute);
     app.post('/register', controllerIndex.auth.signUp);
     app.post('/login', controllerIndex.auth.login);
     app.post('/changepassword', authUtil.verifySessionId, controllerIndex.auth.changePassword);

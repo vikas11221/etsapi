@@ -10,7 +10,6 @@ var userModel = require('../models/userModel');
  * @param {Object} res - express response.
  * @param {function} next - next middleware callback.
  */
-
 exports.signUp = function (req, res, next) {
     userModel.createPublicUser(req, function (err, result, sessionId) {
         if (err) {
@@ -31,7 +30,6 @@ exports.signUp = function (req, res, next) {
  * @param {Object} res - express response.
  * @param {function} next - next middleware callback.
  */
-
 exports.signUpBusinessOwner = function (req, res, next) {
     userModel.createBusinessOwner(req, function (err, result, sessionId) {
         if (err) {
@@ -44,7 +42,6 @@ exports.signUpBusinessOwner = function (req, res, next) {
 };
 
 
-
 /**
  * User login controller
  * @request_type- POST
@@ -53,7 +50,6 @@ exports.signUpBusinessOwner = function (req, res, next) {
  * @param {Object} res - express response.
  * @param {function} next - next middleware callback.
  */
-
 exports.login = function (req, res, next) {
     authModel.login(req, function (err, result, sessionId) {
         if (err) {
@@ -65,6 +61,7 @@ exports.login = function (req, res, next) {
     });
 };
 
+
 /**
  * Check Email existance controller
  * @request_type- GET
@@ -73,7 +70,6 @@ exports.login = function (req, res, next) {
  * @param {Object} res - express response.
  * @param {function} next - next middleware callback.
  */
-
 exports.checkEmail = function (req, res, next) {
     authModel.checkEmail(req, function (err, result) {
         if (err) {
@@ -94,7 +90,6 @@ exports.checkEmail = function (req, res, next) {
  * @param {Object} res - express response.
  * @param {function} next - next middleware callback.
  */
-
 exports.changePassword = function (req, res, next) {
     userModel.changePassword(req, function (err, result) {
         if (err) {
@@ -107,7 +102,6 @@ exports.changePassword = function (req, res, next) {
 };
 
 
-
 /**
  * Forget password controller
  * @request_type- POST
@@ -116,7 +110,6 @@ exports.changePassword = function (req, res, next) {
  * @param {Object} res - express response.
  * @param {function} next - next middleware callback.
  */
-
 exports.forgetPassword = function (req, res, next) {
     authModel.forgetPassword(req, function (err, result) {
         if (err) {
@@ -137,7 +130,6 @@ exports.forgetPassword = function (req, res, next) {
  * @param {Object} res - express response.
  * @param {function} next - next middleware callback.
  */
-
 exports.checkUserName = function (req, res, next) {
     authModel.checkUserName(req, function (err, result) {
         if (err) {

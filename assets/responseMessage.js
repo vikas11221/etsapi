@@ -136,5 +136,6 @@ module.exports = {
     DOMAIN_LOCKED: 'Website locked successfully',
     DOMAIN_UNLOCKED: 'Website unlocked successfully',
     BUSINESS_STATUS_CHANGED: 'Business status changed successfully',
-    LINKED_BUSINESS: 'User linked with business successfully'
+    LINKED_BUSINESS: 'User linked with business successfully',
+    TIME_SAVED: 'Break Time saved successfully'
 };
