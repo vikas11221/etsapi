@@ -8,6 +8,16 @@ var userModel = require('../models/userModel');
  * @param {Object} res - express response.
  * @param {function} next - next middleware callback.
  */
+exports.getUserDetail = function (req, res, next) {
+    userModel.getdetail(req,function (err,result) {
+        if (err) {
+            next(err);
+        }
+        else {
+            res.json(result);
+        }
+    })
+};
 
 exports.updateProfile = function (req, res, next) {
     userModel.editProfile(req, function (err, result) {

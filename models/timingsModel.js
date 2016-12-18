@@ -81,23 +81,36 @@ user.getTotalBreakTime = function (req, callback) {
 
                 var loginTime = result_date[0].date;
 
-                var myStringParts = (result[0])[0].totalIdleTime.split(':');
-                var actualTime = moment(moment().format('YYYY-MM-DD hh:mm:ss')).subtract({ hours: myStringParts[0], minutes: myStringParts[1], seconds: myStringParts[2]});
-                var _loginTime = new moment(moment( loginTime ).format('YYYY-MM-DD hh:mm:ss'));     
+                if((result[0])[0].totalIdleTime){
+                    var myStringParts = (result[0])[0].totalIdleTime.split(':');
+                }else{
+                    var myStringParts = "00:00:00".split(':');
+                }
+                
+                var subtractJson = { hours: myStringParts[0], 
+                                     minutes: myStringParts[1], 
+                                     seconds: myStringParts[2]
+                                     }
+               
+                var _loginTime = new moment( loginTime );   
               
-                var ms = moment(actualTime).diff(_loginTime);
+                var ms = (moment().subtract(subtractJson)).diff(_loginTime);
                 var d = moment.duration(ms);
                 var totalWorkHours = Math.floor(d.asHours()) + moment.utc(ms).format(":mm:ss");
                 
-                var startTime=moment(totalWorkHours, "HH:mm:ss");
-                var endTime=moment('08:30:00',"hh:mm:ss");
+                var startTime = moment(totalWorkHours, "HH:mm:ss");
+                var endTime = _loginTime.add({hours:'08',minutes:'30'});
                 var duration = moment.duration(endTime.diff(startTime));
                 var hours = parseInt(duration.asHours());
                 var minutes = parseInt(duration.asMinutes())-hours*60;
 
                 var response = new responseModel.arrayResponse();
-                response.data = lodash.concat(result[0] , {'totalWorkHours':totalWorkHours});
-                response.data = lodash.concat(response.data , {'remainingHours':hours + ":" + minutes});
+                
+                result[0].push({'totalWorkHours':totalWorkHours});
+                result[0].push({'remainingHours':hours + ":" + minutes})
+                result[0].push({'loginTime': loginTime.split(" ")[1]})
+               
+                response.data = lodash.flattenDeep(result[0]);
                 return callback(null, response);
             });
         }

@@ -8,6 +8,7 @@ var responseMessage = require('../assets/responseMessage');
 var dbNames = require('../assets/dbNames');
 // var mailer = require('../notify/mailNotifier');
 var api_events = require('../assets/api_events');
+var userModel = require('./userModel');
 
 var md5 = require('md5');
 var uuid = require('node-uuid');
@@ -124,8 +125,14 @@ auth.login = function (req, callback) {
             return callback(err);
         }
         else {
-            var response = responseForSuccessfulLogin(userDetail);
-            return callback(null, response, newSessionId);
+            var _req = {};
+                _req.body = {};
+                _req.body.userId = userDetail.id.toString();
+                
+            userModel.getdetail(_req,function (err,result) {
+                var response = responseForSuccessfulLogin(result[0]);
+                return callback(null, response, newSessionId);
+            })
         }
     });
 
@@ -146,7 +153,8 @@ var responseForSuccessfulLogin = function (userDetail) {
         'userId': userDetail.id,
         'imgUrl': userDetail.imgUrl,
         'roleId': userDetail.roleId,
-        'userName': userDetail.userName
+        'userName': userDetail.userName,
+        'lastLogin': userDetail.date
 
     };
 

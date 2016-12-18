@@ -26,6 +26,29 @@ var _user_role = {
     'admin': 6
 };
 
+
+user.getdetail = function (req, callback) {
+    var rules = {
+        userId: Check.that(req.body.userId).isNotEmptyOrBlank(),
+    };
+    appUtils.validateChecks(rules, function (err) {
+        if (err) {
+            return callback(err);
+        }
+        else {
+            var stringQuery = 'SELECT firstName,lastName,email,date,sessionId FROM users where id = ? ';
+            stringQuery = mysql.format(stringQuery, req.body.userId);
+            dbHelper.executeQuery(stringQuery, function (err, result) {
+                if (err) {
+                    return callback(err);
+                } else {
+                    return callback(null, result);
+                }
+            });
+        }
+    });
+};
+
 /**
  * Used for creating new public user.
  * @param {object} - req (express request object)
@@ -48,7 +71,7 @@ user.createPublicUser = function (req, callback) {
             var insertData = sanitizeDataForUserTable(req.body);
             var sessionId = insertData.sessionId;
             //         return callback(null, insertData);
-            insertUserData(insertData, {roleId:_user_role.public, departmentId: req.body.departmentId.trim()}, function (err, userIdCreated) {
+            insertUserData(insertData, { roleId: _user_role.public, departmentId: req.body.departmentId.trim() }, function (err, userIdCreated) {
                 if (err) {
                     return callback(err);
                 }
@@ -58,7 +81,7 @@ user.createPublicUser = function (req, callback) {
                 response.message = responseMessage.REGISTRATION_SUCCESSFULL;
                 return callback(null, response, sessionId);
             });
-         }
+        }
     });
 };
 
@@ -298,12 +321,12 @@ user.checkBusinessUserProfile = function (req, callback) {
  * @param {function(Error,object)} callback - callback function.
  */
 
-var addUserRole = function (userId, roleId,departmentId, callback) {
+var addUserRole = function (userId, roleId, departmentId, callback) {
     var stringQuery = 'INSERT INTO user_in_roles SET ?';
     var insertData = {
         'roleId': roleId,
         'userId': userId,
-        'departmentId':departmentId
+        'departmentId': departmentId
     };
     stringQuery = mysql.format(stringQuery, insertData);
     dbHelper.executeQuery(stringQuery, callback);
@@ -333,7 +356,7 @@ var insertUserData = function (insertData, roleId_dptId, callback) {
                 return callback(err);
             }
             var userId = result.insertId;
-            addUserRole(result.insertId, roleId_dptId.roleId,roleId_dptId.departmentId, function (err) {
+            addUserRole(result.insertId, roleId_dptId.roleId, roleId_dptId.departmentId, function (err) {
                 if (err) {
                     return callback(err);
                 }
@@ -382,8 +405,8 @@ var checkDuplicateRegistratrtion = function (emailId, userName, callback) {
         if (err) {
             return callback(err);
         }
-        if(result[0].length > 0){
-           return callback(null, true);
+        if (result[0].length > 0) {
+            return callback(null, true);
         }
         return callback(null, false);
     });

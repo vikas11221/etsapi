@@ -11,5 +11,6 @@ router.post('/user/totalbreaktime_idletime', controllerIndex.timings.getTotalBre
 
 router.post('/user/changeIsApproved', controllerIndex.timings.changeIsApproved);
 router.post('/user/breaktimelist', controllerIndex.timings.breaktimelist);
+router.post('/user/detail', controllerIndex.user.getUserDetail);
 
 module.exports = router;
