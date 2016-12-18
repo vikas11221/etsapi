@@ -35,7 +35,6 @@ var _user_role = {
 
 user.saveBreakTime = function (req, callback) {
     var rules = {
-        userId : Check.that(req.body.userId).isNotEmptyOrBlank(),
         meetingWith : Check.that(req.body.meetingWith).isOptional().isNotEmptyOrBlank().isLengthInRange(1, 50),
         reason : Check.that(req.body.reason).isNotEmptyOrBlank(),
         breakTime : Check.that(req.body.breakTime).isNotEmptyOrBlank(),
@@ -46,8 +45,8 @@ user.saveBreakTime = function (req, callback) {
         if (err) {
             return callback(err);
         }
-        else {
-            var insertData = sanitizeDataForTimingsTable(req.body);
+        else {           
+            var insertData = sanitizeDataForTimingsTable(req.body,req.auth.id);
             insertTimingsData(insertData, function (err, result) {
                 if (err) {
                     return callback(err);
@@ -98,7 +97,14 @@ user.getTotalBreakTime = function (req, callback) {
                 var d = moment.duration(ms);
                 var totalWorkHours = Math.floor(d.asHours()) + moment.utc(ms).format(":mm:ss");
                 
-                var startTime = moment(totalWorkHours, "HH:mm:ss");
+                var totalworkHoursParts = totalWorkHours.split(":");
+                
+                var addActualWorkHours = {hours:totalworkHoursParts[0],
+                                          minutes:totalworkHoursParts[1],
+                                          seconds:totalworkHoursParts[2]
+                                          };
+                                          
+                var startTime = new moment(loginTime).add(addActualWorkHours);
                 var endTime = _loginTime.add({hours:'08',minutes:'30'});
                 var duration = moment.duration(endTime.diff(startTime));
                 var hours = parseInt(duration.asHours());
@@ -180,9 +186,9 @@ var insertTimingsData = function (insertData, callback) {
 };
 
 
-var sanitizeDataForTimingsTable = function (data) {
+var sanitizeDataForTimingsTable = function (data,userId) {
     var insertObject = {};
-    insertObject['userId'] = data.userId.trim();
+    insertObject['userId'] = userId;
     insertObject['reason'] = data.reason.trim();
     insertObject['breakTime'] = data.breakTime;
     if (data.meetingWith) {
