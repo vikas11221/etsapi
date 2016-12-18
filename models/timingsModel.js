@@ -35,7 +35,6 @@ var _user_role = {
 
 user.saveBreakTime = function (req, callback) {
     var rules = {
-        meetingWith : Check.that(req.body.meetingWith).isOptional().isNotEmptyOrBlank().isLengthInRange(1, 50),
         reason : Check.that(req.body.reason).isNotEmptyOrBlank(),
         breakTime : Check.that(req.body.breakTime).isNotEmptyOrBlank(),
         isMeeting : Check.that(req.body.isMeeting).isNotEmptyOrBlank(),
@@ -67,7 +66,7 @@ user.getTotalBreakTime = function (req, callback) {
     var curDate = moment().format().split("T")[0];
 
     var stringQuery = 'CALL ?? ( ?,?);';
-    var object = [dbNames.sp.totalIdleTime_meetingTime, curDate , req.body.userId];
+    var object = [dbNames.sp.totalIdleTime_meetingTime, curDate , req.auth.id];
     stringQuery = mysql.format(stringQuery, object);
 
     dbHelper.executeQuery(stringQuery, function (err, result) {
