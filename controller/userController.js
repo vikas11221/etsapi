@@ -68,3 +68,15 @@ exports.isArtist = function (req, res, next) {
         }
     });
 };
+
+
+exports.changePassword = function (req, res, next) {
+    userModel.changePassword(req, function (err, result) {
+        if (err) {
+            next(err);
+        }
+        else {
+            res.json(result);
+        }
+    });
+};

@@ -28,10 +28,22 @@ var _user_role = {
 };
 
 /**
- * Used for creating new public user.
+ * Used for get default break timings
  * @param {object} - req (express request object)
  * @param {function(Error,object)} callback - callback function.
  */
+
+user.getDefaultBreakTime = function (req, callback) {
+     var stringQuery = 'SELECT * FROM brekTimeList';
+    stringQuery = mysql.format(stringQuery);
+    dbHelper.executeQuery(stringQuery, function (err, result) {
+        if (err) {
+            return callback(err);
+        }
+        return callback(err, result);
+
+    });
+}
 
 user.saveBreakTime = function (req, callback) {
     var rules = {

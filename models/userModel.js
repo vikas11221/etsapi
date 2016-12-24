@@ -433,7 +433,7 @@ var changeUsersOwnPassword = function (req, callback) {
         var oldPassword = md5(req.body.oldPassword);
         var newPassword = md5(req.body.newPassword);
         var sqlQuery = 'UPDATE ?? SET  ?? = ?  WHERE ??=? AND ??=?';
-        var inserts = ['db_users', 'password', newPassword, 'id', userId, 'password', oldPassword];
+        var inserts = ['users', 'password', newPassword, 'id', userId, 'password', oldPassword];
         sqlQuery = mysql.format(sqlQuery, inserts);
 
         dbHelper.executeQueryPromise(sqlQuery).then(function (result) {

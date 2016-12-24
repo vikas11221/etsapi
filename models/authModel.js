@@ -16,7 +16,7 @@ var mysql = require('mysql');
 var async = require('async');
 var lodash = require('lodash');
 var randomstring = require('randomstring');
-
+var moment = require('moment');
 
 //Define modules
 
@@ -103,10 +103,10 @@ auth.login = function (req, callback) {
                 if (err) {
                     return cb(err);
                 }
-                else if (req.body.deviceId && result.roleId > 1) {
-                    return cb(ApiException.newNotAllowedError(api_errors.not_allowed_login.error_code, null)
-                        .addDetails(api_errors.not_allowed_login.description));
-                }
+                // else if (req.body.deviceId && result.roleId > 1) {
+                //     return cb(ApiException.newNotAllowedError(api_errors.not_allowed_login.error_code, null)
+                //         .addDetails(api_errors.not_allowed_login.description));
+                // }
                 else {
                     if (result.password == md5(req.body.password)) {
                         newSessionId = uuid.v4();
@@ -126,10 +126,10 @@ auth.login = function (req, callback) {
         }
         else {
             var _req = {};
-                _req.body = {};
-                _req.body.userId = userDetail.id.toString();
-                
-            userModel.getdetail(_req,function (err,result) {
+            _req.body = {};
+            _req.body.userId = userDetail.id.toString();
+
+            userModel.getdetail(_req, function (err, result) {
                 var response = responseForSuccessfulLogin(result[0]);
                 return callback(null, response, newSessionId);
             })
@@ -228,7 +228,7 @@ var checkUserNameExistance = function (userName, callback) {
  */
 var validateUser = function (request, callback) {
     var sql = 'CALL ?? ( ?,?);';
-    var object = [dbNames.sp.getUserDetail, '' , request.email];
+    var object = [dbNames.sp.getUserDetail, '', request.email];
     sql = mysql.format(sql, object);
     dbHelper.executeQueryPromise(sql).then(function (result) {
         if (result[0].length) {
@@ -257,17 +257,38 @@ var updateUserDetailOnLogin = function (req, newSessionId, callback) {
         updateObject['deviceId'] = req.body.deviceId;
     }
     updateObject['sessionId'] = newSessionId;
-    updateObject['date'] = require('moment')().format('YYYY-MM-DD HH:mm:ss');
+
     var stringQuery = 'UPDATE ?? SET ? WHERE email = ? OR userName=? ';
     stringQuery = mysql.format(stringQuery, ['users', updateObject, req.body.email, req.body.email]);
     dbHelper.executeQueryPromise(stringQuery).then(function (result) {
-        callback(null, result);
+        updateDateIfLoggedInFirstTimeToday({ sessionId: newSessionId, date: moment().format('YYYY-MM-DD HH:mm:ss') }, callback);
     }, function (err) {
         callback(err, null);
     });
 
 };
 
+var updateDateIfLoggedInFirstTimeToday = function (params, callback) {
+    var stringQuery = 'select id from users where date(users.date) = ? and sessionId = ?';
+    stringQuery = mysql.format(stringQuery, [params.date.split(" ")[0],params.sessionId]);
+    dbHelper.executeQueryPromise(stringQuery).then(function (result) {
+        if (result.length) {
+             callback(null, result);
+        }
+        else {
+            stringQuery = 'UPDATE ?? SET users.date = ? WHERE sessionId = ?';
+            stringQuery = mysql.format(stringQuery, ['users',params.date,params.sessionId]);
+            dbHelper.executeQueryPromise(stringQuery).then(function (result) {
+                 callback(null, result);
+            }, function (err) {
+                callback(err, null);
+            });
+        }
+
+    }, function (err) {
+        callback(err, null);
+    });
+}
 
 /**
  * Reset the password.
