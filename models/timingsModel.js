@@ -87,7 +87,7 @@ user.getTotalBreakTime = function (req, callback) {
         }
 
         if (result[0].length) {
-            getLoginTime(req.body.userId, function (err,result_date) {
+            getLoginTime(req.auth.id, function (err,result_date) {
 
                 var loginTime = result_date[0].date;
 
@@ -160,7 +160,8 @@ user.changeIsApproved = function (req, callback) {
 };
 
 user.breaktimelist = function (req, callback) {
-    var stringQuery = 'SELECT * FROM timer_detail ORDER BY date DESC';
+    var stringQuery = 'select timer_detail.*,users.firstName,users.lastName,users.email,users.isLive,users.date as loginDateTime'
+        stringQuery += ' from (timer_detail join users on timer_detail.userId = users.id);';
     // stringQuery = mysql.format(stringQuery, [req.body.isApproved == "true",req.body.breakTimeId]);
     dbHelper.executeQuery(stringQuery, function (err, result) {
         if (err) {

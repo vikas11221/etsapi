@@ -154,7 +154,7 @@ var responseForSuccessfulLogin = function (userDetail) {
         'imgUrl': userDetail.imgUrl,
         'roleId': userDetail.roleId,
         'userName': userDetail.userName,
-        'lastLogin': userDetail.date
+        'loginDateTime': userDetail.date
 
     };
 
