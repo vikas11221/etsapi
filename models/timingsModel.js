@@ -161,7 +161,7 @@ user.changeIsApproved = function (req, callback) {
 
 user.breaktimelist = function (req, callback) {
     var stringQuery = 'select timer_detail.*,users.firstName,users.lastName,users.email,users.isLive,users.date as loginDateTime'
-        stringQuery += ' from (timer_detail join users on timer_detail.userId = users.id);';
+        stringQuery += ' from (timer_detail join users on timer_detail.userId = users.id) order by date desc;';
     // stringQuery = mysql.format(stringQuery, [req.body.isApproved == "true",req.body.breakTimeId]);
     dbHelper.executeQuery(stringQuery, function (err, result) {
         if (err) {
