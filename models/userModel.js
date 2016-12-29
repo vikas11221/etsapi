@@ -30,7 +30,7 @@ var _user_role = {
 
 user.getdetail = function (req, callback) {
     var rules = {
-        userId: Check.that(req.body.userId).isNotEmptyOrBlank(),
+        userId: Check.that(req.body.userId).isNotEmptyOrBlank()
     };
     appUtils.validateChecks(rules, function (err) {
         if (err) {
@@ -80,10 +80,13 @@ user.createPublicUser = function (req, callback) {
                 }
 
                 getUserByEmail(insertData.email, function (err, result) {
-                    var body = {userId: result.Id, loginTime: result.date};
+                    var body = {};
+                    body.userId = result.id;
+                    body.loginTime = result.date;
+
                     var wrapBody = {};
                     wrapBody.body = body;
-                    saveLoginLogoutTime(wrapBody, function (err, result) {
+                    saveLoginLogoutTime(wrapBody, function (err, _result) {
                         var response = new responseModel.objectResponse();
                         response.data = responseForSuccessfulSignUp(result, userIdCreated, _user_role.public);
                         response.message = responseMessage.REGISTRATION_SUCCESSFULL;
