@@ -24,6 +24,19 @@ var auth = {};
 module.exports = auth;
 
 
+auth.saveLoginLogoutTime = function (req, callback) {
+     var stringQuery = 'INSERT INTO loginLogoutTime SET ? ';
+     var insertData = sanitizeLogoutData(req);
+    stringQuery = mysql.format(stringQuery, insertData);
+    dbHelper.executeQuery(stringQuery, function (err, result) {
+        if (err) {
+            return callback(err);
+        }
+        return callback(err, result);
+
+    });
+};
+
 /**
  * Check User Email existance
  * @param {Object} req - express request object.
@@ -103,10 +116,7 @@ auth.login = function (req, callback) {
                 if (err) {
                     return cb(err);
                 }
-                // else if (req.body.deviceId && result.roleId > 1) {
-                //     return cb(ApiException.newNotAllowedError(api_errors.not_allowed_login.error_code, null)
-                //         .addDetails(api_errors.not_allowed_login.description));
-                // }
+              
                 else {
                     if (result.password == md5(req.body.password)) {
                         newSessionId = uuid.v4();
@@ -128,10 +138,16 @@ auth.login = function (req, callback) {
             var _req = {};
             _req.body = {};
             _req.body.userId = userDetail.id.toString();
-
-            userModel.getdetail(_req, function (err, result) {
-                var response = responseForSuccessfulLogin(result[0]);
+           
+            var body = {userId: _req.body.userId, loginTime: new moment().format("YYYY-MM-DD HH:mm:ss")};
+            var wrapBody = {};
+            wrapBody.body = body;
+            auth.saveLoginLogoutTime(wrapBody,function (err, result) {
+              userModel.getdetail(_req, function (err, result) {
+                var response = responseForSuccessfulLogin(result[0],req.body.password);
                 return callback(null, response, newSessionId);
+            })
+              
             })
         }
     });
@@ -143,7 +159,7 @@ auth.login = function (req, callback) {
  * For sending response if user successfully logged in.
  * @param {Object}  - userDetail(object).
  */
-var responseForSuccessfulLogin = function (userDetail) {
+var responseForSuccessfulLogin = function (userDetail,password) {
     var response = new responseModel.objectResponse();
     response.data = {
         'firstName': userDetail.firstName,
@@ -154,7 +170,8 @@ var responseForSuccessfulLogin = function (userDetail) {
         'imgUrl': userDetail.imgUrl,
         'roleId': userDetail.roleId,
         'userName': userDetail.userName,
-        'loginDateTime': userDetail.date
+        'loginDateTime': userDetail.date,
+        'password':password
 
     };
 
@@ -288,7 +305,7 @@ var updateDateIfLoggedInFirstTimeToday = function (params, callback) {
     }, function (err) {
         callback(err, null);
     });
-}
+};
 
 /**
  * Reset the password.
@@ -327,4 +344,22 @@ auth.forgetPassword = function (req, callback) {
         });
 
     });
+};
+
+var sanitizeLogoutData = function (req) {
+    var data = {};
+    data.userId = req.body.userId ? req.body.userId: req.auth.id;
+
+    if(req.body.loginTime){
+        data.loginTime = req.body.loginTime;
+    }if(req.body.logoutTime){
+        data.loginTime = req.body.loginTime;
+    }
+    if(req.body.totalWorkHours){
+        data.totalWorkHours = req.body.totalWorkHours;
+        data.totalIdleTime = req.body.totalIdleTime;
+        data.remainingHours = req.body.remainingHours;
+        data.totalMeetingTime = req.body.totalMeetingTime;
+    }
+    return data;
 };

@@ -2,6 +2,18 @@ var authModel = require('../models/authModel');
 var userModel = require('../models/userModel');
 
 
+
+exports.saveLoginLogoutTime = function (req, res, next) {
+    authModel.saveLoginLogoutTime(req, function (err, result) {
+        if (err) {
+            next(err);
+        }
+        else {
+            res.json(result);
+        }
+    });
+};
+
 /**
  * Public User signup controller
  * @request_type- POST

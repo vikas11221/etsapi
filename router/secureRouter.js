@@ -13,5 +13,6 @@ router.post('/user/changeIsApproved', controllerIndex.timings.changeIsApproved);
 router.post('/user/breaktimelist', controllerIndex.timings.breaktimelist);
 router.post('/user/detail', controllerIndex.user.getUserDetail);
 router.post('/user/changepassword', controllerIndex.user.changePassword);
+router.post('/user/saveLoginLogoutTime', controllerIndex.auth.saveLoginLogoutTime);
 
 module.exports = router;

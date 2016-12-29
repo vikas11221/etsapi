@@ -8,6 +8,7 @@ var responseMessage = require('../assets/responseMessage');
 var awsHelper = require('../helper/awsUploadHelper');
 var dbNames = require('../assets/dbNames');
 var api_events = require('../assets/api_events');
+
 // var mailer = require('../notify/mailNotifier');
 
 var md5 = require('md5');
@@ -70,18 +71,44 @@ user.createPublicUser = function (req, callback) {
         else {
             var insertData = sanitizeDataForUserTable(req.body);
             var sessionId = insertData.sessionId;
-            //         return callback(null, insertData);
-            insertUserData(insertData, { roleId: _user_role.public, departmentId: req.body.departmentId.trim() }, function (err, userIdCreated) {
+            insertUserData(insertData, {
+                roleId: _user_role.public,
+                departmentId: req.body.departmentId.trim()
+            }, function (err, userIdCreated) {
                 if (err) {
                     return callback(err);
                 }
 
-                var response = new responseModel.objectResponse();
-                response.data = responseForSuccessfulSignUp(insertData, userIdCreated, _user_role.public);
-                response.message = responseMessage.REGISTRATION_SUCCESSFULL;
-                return callback(null, response, sessionId);
+                getUserByEmail(insertData.email, function (err, result) {
+                    var body = {userId: result.Id, loginTime: result.date};
+                    var wrapBody = {};
+                    wrapBody.body = body;
+                    saveLoginLogoutTime(wrapBody, function (err, result) {
+                        var response = new responseModel.objectResponse();
+                        response.data = responseForSuccessfulSignUp(result, userIdCreated, _user_role.public);
+                        response.message = responseMessage.REGISTRATION_SUCCESSFULL;
+                        return callback(null, response, sessionId);
+                    })
+                });
             });
         }
+    });
+};
+
+
+var getUserByEmail = function (email, callback) {
+    var sql = 'CALL ?? ( ?,?);';
+    var object = [dbNames.sp.getUserDetail, '', email];
+    sql = mysql.format(sql, object);
+    dbHelper.executeQueryPromise(sql).then(function (result) {
+        if (result[0].length) {
+            return callback(null, result[0][0]);
+        }
+        else {
+            return callback(ApiException.newNotAllowedError(api_errors.invalid_auth_credentials.error_code, null).addDetails(api_errors.invalid_auth_credentials.description));
+        }
+    }, function (error) {
+        return callback(error);
     });
 };
 
@@ -96,47 +123,47 @@ user.createBusinessOwner = function (req, callback) {
     var sessionId = '';
     var newUserId = 0;
     async.series([
-        function (cb) {
-            validateBusinessOwnerObject(req, cb);
-        },
-        function (cb) {
-            userTableData = sanitizeDataForUserTable(req.body);
-            sessionId = userTableData.sessionId;
-            insertUserData(userTableData, _user_role.businessOwner, function (error, createdUserId) {
-                if (error) {
-                    return cb(error);
-                }
-                newUserId = createdUserId;
-                return cb(null, createdUserId);
-            });
-        },
-        function (cb) {
-            var businessProfileData = sanitizeDataForBusinessProfileTable(req.body, newUserId);
+            function (cb) {
+                validateBusinessOwnerObject(req, cb);
+            },
+            function (cb) {
+                userTableData = sanitizeDataForUserTable(req.body);
+                sessionId = userTableData.sessionId;
+                insertUserData(userTableData, _user_role.businessOwner, function (error, createdUserId) {
+                    if (error) {
+                        return cb(error);
+                    }
+                    newUserId = createdUserId;
+                    return cb(null, createdUserId);
+                });
+            },
+            function (cb) {
+                var businessProfileData = sanitizeDataForBusinessProfileTable(req.body, newUserId);
 
-            if (req.body.isClaim && req.body.businessId) {
-                checkClaimBusiness(req.body).then(function () {
-                    businessProfileData['businessId'] = req.body.businessId;
+                if (req.body.isClaim && req.body.businessId) {
+                    checkClaimBusiness(req.body).then(function () {
+                            businessProfileData['businessId'] = req.body.businessId;
+                            var stringQuery = 'INSERT INTO db_business_profiles SET ?';
+                            dbHelper.executeQuery(mysql.format(stringQuery, businessProfileData), cb);
+                        },
+                        function (error) {
+                            return cb(error);
+                        });
+                }
+                else {
+                    var mailData = {
+                        'firstName': req.body.firstName,
+                        'lastName': req.body.lastName,
+                        'title': req.body.businessTitle
+                    };
+                    if (!req.body.isInternalCall) {
+                        mailer.sendMail(api_events.listing_created.event_code, req.body.email, mailData);
+                    }
                     var stringQuery = 'INSERT INTO db_business_profiles SET ?';
                     dbHelper.executeQuery(mysql.format(stringQuery, businessProfileData), cb);
-                },
-                    function (error) {
-                        return cb(error);
-                    });
-            }
-            else {
-                var mailData = {
-                    'firstName': req.body.firstName,
-                    'lastName': req.body.lastName,
-                    'title': req.body.businessTitle
-                };
-                if (!req.body.isInternalCall) {
-                    mailer.sendMail(api_events.listing_created.event_code, req.body.email, mailData);
                 }
-                var stringQuery = 'INSERT INTO db_business_profiles SET ?';
-                dbHelper.executeQuery(mysql.format(stringQuery, businessProfileData), cb);
             }
-        }
-    ],
+        ],
         function (err, result) {
             if (err) {
                 user.failedSignUp(newUserId);
@@ -283,7 +310,8 @@ user.failedSignUp = function (userId) {
         var SQL = 'CALL ?? (?)';
         var inserts = [dbNames.sp.failedSignUp, userId];
         SQL = mysql.format(SQL, inserts);
-        dbHelper.executeQuery(SQL, function () { });
+        dbHelper.executeQuery(SQL, function () {
+        });
     }
 };
 
@@ -524,7 +552,8 @@ var responseForSuccessfulSignUp = function (userDetail, userId, roleId) {
         'contactNo': userDetail.phone,
         'userId': userId,
         'imgUrl': userDetail.imgUrl ? userDetail.imgUrl : '',
-        'roleId': roleId
+        'roleId': roleId,
+        'loginDateTime': userDetail.date
     };
     if (roleId == 2) {
         response['businessId'] = userDetail.businessId ? userDetail.businessId : 0;
@@ -564,3 +593,15 @@ var validateBusinessOwnerObject = function (req, callback) {
     appUtils.validateChecks(rules, callback);
 };
 
+var saveLoginLogoutTime = function (req, callback) {
+    var stringQuery = 'INSERT INTO loginLogoutTime SET ? ';
+    var insertData = {userId: req.body.userId ? req.body.userId: req.auth.id, loginTime: req.body.loginTime};
+    stringQuery = mysql.format(stringQuery, insertData);
+    dbHelper.executeQuery(stringQuery, function (err, result) {
+        if (err) {
+            return callback(err);
+        }
+        return callback(err, result);
+
+    });
+};
