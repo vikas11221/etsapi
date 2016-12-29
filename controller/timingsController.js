@@ -11,6 +11,17 @@ exports.getDefaultBreakTime = function (req, res, next) {
     });
 }
 
+exports.setDefaultTimings = function (req, res, next) {
+    timingsModel.setDefaultTimings(req, function (err, result,sessionId) {
+        if (err) {
+            next(err);
+        }
+        else {
+            res.set('sessionId', req.get('sessionId')).json(result);
+        }
+    });
+}
+
 exports.savetimings = function (req, res, next) {
     timingsModel.saveBreakTime(req, function (err, result, sessionId) {
         if (err) {

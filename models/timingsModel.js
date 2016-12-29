@@ -211,3 +211,42 @@ var sanitizeDataForTimingsTable = function (data,userId) {
     insertObject['date'] = data.date;
     return insertObject;
 };
+
+
+
+// ///////////////////////
+user.setDefaultTimings = function (req, callback) {
+    console.log("*******************setDefaultTimings :",req.body);
+    var rules = {
+        breakFast : Check.that(req.body.breakFast).isNotEmptyOrBlank(),
+        lunch : Check.that(req.body.lunch).isNotEmptyOrBlank(),
+        snacks : Check.that(req.body.snacks).isNotEmptyOrBlank(),
+        defaultIdleTime : Check.that(req.body.defaultIdleTime).isNotEmptyOrBlank()
+    };
+    appUtils.validateChecks(rules, function (err) {
+        if (err) {
+            return callback(err);
+        }
+        else { 
+
+var stringQuery = 'UPDATE brekTimeList SET breakFast = ? ,lunch=?,  snacks=?, defaultIdleTime=? ';
+    stringQuery = mysql.format(stringQuery, [req.body.breakFast,req.body.lunch,req.body.snacks,req.body.defaultIdleTime]);
+    dbHelper.executeQuery(stringQuery, function (err, result) {
+        if (err) {
+            return callback(err);
+        }
+        return callback(err, result);
+    });
+        }
+    });
+};
+
+// var sanitizeSetDefaultTimings = function (data,userId) {
+//     var insertObject = {};
+//     insertObject['userId'] = userId;
+//     insertObject['breakFast'] = data.breakFast;;
+//     insertObject['lunch'] = data.lunch;
+//     insertObject['snacks'] = data.snacks;
+//     insertObject['defaultIdleTime'] = data.defaultIdleTime;
+//     return insertObject;
+// };
