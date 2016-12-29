@@ -353,7 +353,7 @@ var sanitizeLogoutData = function (req) {
     if(req.body.loginTime){
         data.loginTime = req.body.loginTime;
     }if(req.body.logoutTime){
-        data.loginTime = req.body.loginTime;
+        data.logoutTime = req.body.logoutTime;
     }
     if(req.body.totalWorkHours){
         data.totalWorkHours = req.body.totalWorkHours;

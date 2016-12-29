@@ -14,6 +14,7 @@ router.post('/user/breaktimelist', controllerIndex.timings.breaktimelist);
 router.post('/user/setDefaultTimings', controllerIndex.timings.setDefaultTimings);
 router.post('/user/detail', controllerIndex.user.getUserDetail);
 router.post('/user/changepassword', controllerIndex.user.changePassword);
+router.post('/user/logout', controllerIndex.auth.saveLoginLogoutTime);
 router.post('/user/saveLoginLogoutTime', controllerIndex.auth.saveLoginLogoutTime);
 
 module.exports = router;
