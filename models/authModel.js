@@ -28,6 +28,7 @@ auth.saveLoginLogoutTime = function (req, callback) {
      var stringQuery = 'INSERT INTO loginLogoutTime SET ? ';
      var insertData = sanitizeLogoutData(req);
     stringQuery = mysql.format(stringQuery, insertData);
+
     dbHelper.executeQuery(stringQuery, function (err, result) {
         if (err) {
             return callback(err);

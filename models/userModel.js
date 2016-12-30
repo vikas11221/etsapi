@@ -80,13 +80,12 @@ user.createPublicUser = function (req, callback) {
                 }
 
                 getUserByEmail(insertData.email, function (err, result) {
-                    var body = {};
-                    body.userId = result.id;
-                    body.loginTime = result.date;
+                    var body = {userId: result.id, loginTime: result.date};
 
+                    body.userId = result.id
                     var wrapBody = {};
                     wrapBody.body = body;
-                    saveLoginLogoutTime(wrapBody, function (err, _result) {
+                    saveLoginLogoutTime(wrapBody, function (err, result) {
                         var response = new responseModel.objectResponse();
                         response.data = responseForSuccessfulSignUp(result, userIdCreated, _user_role.public);
                         response.message = responseMessage.REGISTRATION_SUCCESSFULL;
