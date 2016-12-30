@@ -49,7 +49,7 @@ app.use('/static', express.static(__dirname + '/public'));
 require('./router/index')(app);
 
 
-app.listen(config.get('port'), function () {
+app.listen(process.env.OPENSHIFT_NODEJS_PORT || config.get('port'), function () {
     app.emit('online');
 });
 
